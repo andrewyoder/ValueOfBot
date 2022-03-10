@@ -7,10 +7,10 @@ import pprint
 # creating the reddit instance (needed for API calls)
 `reddit = praw.Reddit("ValueOfBot", config_interpolation="basic")`
 
-- shows redditor name (mine) 
+- shows redditor name (mine)\
 `print(reddit.user.me())`
 
-- shows the available actions for our reddit instance 
+- shows the available actions for our reddit instance\
 `print(reddit.auth.scopes())`
 
 # to access a specific subreddit:
