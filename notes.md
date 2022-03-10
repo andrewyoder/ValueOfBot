@@ -35,7 +35,7 @@ for submission in reddit.front.hot():
 ```
 
 - submissions can be sorted by `top, hot, new, rising, controversial, gilded`
-- `limit` is the number of submissions we want to show
+- `limit` is the number of submissions we want to show\
 `for submission in subreddit.top(limit=1):`
 
 - some actions we can take on "submission": `submission.title, .score, .id, .url`
@@ -72,7 +72,7 @@ Note: calling `replace_more()` is destructive. Calling it again on the same subm
     `topLevelComments = list(submission.comments)`
 
 - to create a list of ALL comments (sorted by first-level, second-level, etc)\
-note we must call replace_more() BEFORE creating the list\
+note we must call `replace_more()` BEFORE creating the list\
     `allComments = submission.comments.list()`
 
 - and then iterate with a simple
