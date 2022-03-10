@@ -34,13 +34,11 @@ for submission in reddit.front.hot():
     print(submission)
 ```
 
-- submissions sorted by top, hot, new, rising, controversial, gilded
+- submissions can be sorted by `top, hot, new, rising, controversial, gilded`
 - `limit` is the number of submissions we want to show
-```
-for submission in subreddit.top(limit=1):
-    # some actions we can take on "submission"
-    submission.title, .score, .id, .url
-```
+`for submission in subreddit.top(limit=1):`
+
+- some actions we can take on "submission": `submission.title, .score, .id, .url`
 
 # Submission properties
 - print the attributes of a submission object with `vars()` and `pprint`
@@ -51,9 +49,7 @@ for submission in subreddit.top(limit=1):
     pprint.pprint(vars(submission))
 ```
 
-- we can also check the number of comments with\
-    `submission.num_comments`\
-though this may not match up with all the comments extracted by PRAW, since it includes deleted, removed, and spam comments
+- we can also check the number of comments with `submission.num_comments`, though this may not match up with all the comments extracted by PRAW, since it includes deleted, removed, and spam comments
 
 # Submission stream
 - We probably want to use the submission stream to monitor only new comments, we can do this with
@@ -67,16 +63,16 @@ for submission in subreddit.stream.submissions():
 - change the sort order like so, with values of `hot, controversial, top, best, new`\
     `submission.comment_sort = "new"`
 
-- get new comments using the below, must be called AFTER a sort
-- Note: calling `replace_more()` is destructive. Calling it again on the same submission instance has no effect.
-- limit is how many comments we want to load--default is 32, and "none" will load all comments in the CommentForest\
+- get new comments using `replace_more()`, must be called AFTER a sort\
+Note: calling `replace_more()` is destructive. Calling it again on the same submission instance has no effect.\
+`limit` is how many comments we want to load--default is 32, and `None` will load all comments in the CommentForest\
     `submission.comments.replace_more(limit=None)`
 
 - to create a list of all top-level comments\
     `topLevelComments = list(submission.comments)`
 
-- to create a list of ALL comments (sorted by first-level, second-level, etc)
-- note we must call replace_more() BEFORE creating the list\
+- to create a list of ALL comments (sorted by first-level, second-level, etc)\
+note we must call replace_more() BEFORE creating the list\
     `allComments = submission.comments.list()`
 
 - and then iterate with a simple
