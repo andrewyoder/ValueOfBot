@@ -1,7 +1,8 @@
-from turtle import fd
-import praw
-import pprint
+import time
 import re
+import praw
+from turtle import fd
+import pprint
 
 # to add back in when getting updated banana prices via the web
 '''
@@ -9,9 +10,10 @@ from bs4 import BeautifulSoup as BS
 import urllib.request as urllib
 '''
 
-RESPONSE_TEMPLATE = "%s is roughly %.1f bananas."
-# this will be populated as support for other currencies is added
-CURRENCY_SYMBOLS = ['$']
+RESPONSE_TEMPLATE = "$%s is roughly %.1f bananas."
+RESPONSE_FOOTER = "\n\n^(I am a bot currently in development. DM me with any suggestions.)"
+CURRENCY = '$'
+SUBREDDITS = "funny+AskReddit+facepalm+gaming+mildlyinfuriating+mildlyinteresting+funnyanimals+meirl"
 
 
 def main():
@@ -23,18 +25,21 @@ def main():
     the reddit instance is created from values stored in a hidden praw.ini file
     """
 
+    # new reddit instance, configured from praw.ini
     reddit = praw.Reddit("ValueOfBot", config_interpolation="basic")
 
-    # testing on my own, private sub for now
-    mySub = reddit.subreddit("ValueOfBot")
+    mySub = reddit.subreddit(SUBREDDITS)
 
     # TODO replace with "mySub.stream.submissions()" to access 
     # only new submissions
-    for submission in mySub.top(limit=3):
-        submission.comment_sort = "top"
+    for submission in mySub.stream.submissions():
+        print(submission.title)
+        submission.comment_sort = "best"
         submission.comments.replace_more(limit=None)
-        allComments = submission.comments.list()
-        process_comments(allComments)
+        commentForest = submission.comments.list()
+        process_comments(commentForest)
+
+    return 0
         
 
 def process_comments(commentForest):
@@ -47,42 +52,52 @@ def process_comments(commentForest):
     """
 
     for comment in commentForest:
-        for currency in CURRENCY_SYMBOLS:
-            if currency in comment.body:
-                # TODO create an array of all currency values 
-                # mentioned in the comment; currently just the first
-                value = extract_value(comment.body, currency)
-                intValue = int(value.replace(currency, ''))
-                comment.reply(RESPONSE_TEMPLATE % (value, 
-                        (intValue/get_banana_value())))
+        if CURRENCY in comment.body:
+            # TODO create an array of all currency values 
+            # mentioned in the comment; currently just the first
+            value = extract_value(comment.body)
+            if (value == None):
                 break
+            intValue = float(value.replace(CURRENCY, ''))
+            comment.reply(RESPONSE_TEMPLATE % (value, 
+                    (intValue/get_banana_value())) + 
+                    RESPONSE_FOOTER)
+            # ratelimit should be handled by 15 minute PRAW setting,
+            # but may need to add in a generic sleep()
+            continue
 
-                # NOTE: when multiple values are extracted, do not post a reply
-                # until all currency symbols have been iterated through
+            # NOTE: when multiple values are extracted, do not post a reply
+            # until all currency symbols have been iterated through
 
-                # values = extract_values(comment.body, currency)
-                # response = ''
-                # for value in values:
-                #     response += RESPONSE_TEMPLATE
-                #           % (value, intValue/get_banana_value()) + '\n'
-                # print(response)
-                # comment.reply(response)
+            # values = extract_values(comment.body, currency)
+            # response = ''
+            # for value in values:
+            #     response += RESPONSE_TEMPLATE
+            #           % (value, intValue/get_banana_value()) + '\n'
+            # print(response)
+            # comment.reply(response)
+    
+    return
 
 
-def extract_value(comment, currency):
+def extract_value(comment):
     """
     extract_value() returns the first currency value in a comment.
     this will be replaced by extract_values(), which will return an array
     of ALL currency values found in a comment.
 
     :param comment: the comment body that contains a currency symbol
-    :param currency: the currency symbol we're checking for
     :return: the word containing our currency value, as a string
     """
+    print(comment)
     comment = comment.split(' ')
     for word in comment:
-        if currency in word:
-            if word.replace(currency, '').isdigit():
+        if CURRENCY in word:
+            word = word.replace(CURRENCY, '')
+            # print(word + ": " + str(word.replace(currency, '').isnumeric()))
+            if word.replace('.', '', 1).isdigit():
+                # TODO: check if period is just end of a sentence
+                print(word)
                 return word
 
 
