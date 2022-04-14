@@ -11,7 +11,7 @@ import urllib.request as urllib
 RESPONSE_TEMPLATE = "$%s is roughly %.1f bananas."
 RESPONSE_FOOTER = "\n\n^(I am a bot currently in development. DM me with any suggestions.)"
 CURRENCY = '$'
-SUBREDDITS = "funny+AskReddit+facepalm+gaming+mildlyinfuriating+mildlyinteresting+funnyanimals+meirl"
+SUBREDDITS = "funny+AskReddit+facepalm+gaming+mildlyinteresting+funnyanimals+meirl"
 
 
 def main():
@@ -23,7 +23,7 @@ def main():
     the reddit instance is created from values stored in a hidden praw.ini file
     """
 
-    reddit = login()
+    reddit = login_heroku()
     mySub = reddit.subreddit(SUBREDDITS)
 
     for submission in mySub.stream.submissions():
@@ -50,6 +50,8 @@ def process_comments(commentForest):
             if (value == None):
                 break
             intValue = float(value.replace(CURRENCY, ''))
+            print((comment.submission).title)
+            print(comment.id + ': ' + value)
             comment.reply(RESPONSE_TEMPLATE % (value, 
                     (intValue/get_banana_value())) + 
                     RESPONSE_FOOTER)
@@ -71,31 +73,27 @@ def process_comments(commentForest):
     return
 
 
-def login():
+def login_heroku():
     """
-    login() fetches a reddit instance with our saved login parameters.
+    login_heroku() fetches a reddit instance with our saved login config.
     
     :return: a reddit instance
     """
 
     print("Logging in..")
-    try:
-        r = praw.Reddit(username = os.environ["reddit_username"],
-                password = os.environ["reddit_password"],
-                client_id = os.environ["client_id"],
-                client_secret = os.environ["client_secret"],
-                user_agent = os.environ["user_agent"],
-                ratelimit_seconds=900,
-                config_interpolation="basic")
-        print("Logged in!")
-    except:
-        try: 
-            r = praw.reddit("ValueOfBot", config_interpolation="basic")
-            print("Logged in!")
-        except:
-            print("Failed to log in!")
-    return r
+    return praw.Reddit(username = os.environ["reddit_username"],
+            password = os.environ["reddit_password"],
+            client_id = os.environ["client_id"],
+            client_secret = os.environ["client_secret"],
+            user_agent = os.environ["user_agent"],
+            ratelimit_seconds=900,
+            config_interpolation="basic")
 
+
+# for local testing
+def login_local():
+    return praw.reddit("ValueOfBot", config_interpolation="basic")
+    
 
 def extract_value(comment):
     """
@@ -111,10 +109,12 @@ def extract_value(comment):
         if CURRENCY in word:
             # remove the '$' character
             word = word.replace(CURRENCY, '')
+            # check if decimal is actually period at end of sentence
+            if word[-1] == '.':
+                word = word[:-1]
             # some voodoo to make sure there's only one decimal present
+            # (remove 1 decimal and call isdigit(), works with integers)
             if word.replace('.', '', 1).isdigit():
-                # TODO: check if period is just end of a sentence
-                print(word)
                 return word
 
 '''
