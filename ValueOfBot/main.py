@@ -1,14 +1,12 @@
-import time
-import re
 import praw
-from turtle import fd
-import pprint
+import os
 
 # to add back in when getting updated banana prices via the web
 '''
 from bs4 import BeautifulSoup as BS
 import urllib.request as urllib
 '''
+
 
 RESPONSE_TEMPLATE = "$%s is roughly %.1f bananas."
 RESPONSE_FOOTER = "\n\n^(I am a bot currently in development. DM me with any suggestions.)"
@@ -25,15 +23,10 @@ def main():
     the reddit instance is created from values stored in a hidden praw.ini file
     """
 
-    # new reddit instance, configured from praw.ini
-    reddit = praw.Reddit("ValueOfBot", config_interpolation="basic")
-
+    reddit = login()
     mySub = reddit.subreddit(SUBREDDITS)
 
-    # TODO replace with "mySub.stream.submissions()" to access 
-    # only new submissions
     for submission in mySub.stream.submissions():
-        print(submission.title)
         submission.comment_sort = "best"
         submission.comments.replace_more(limit=None)
         commentForest = submission.comments.list()
@@ -53,8 +46,6 @@ def process_comments(commentForest):
 
     for comment in commentForest:
         if CURRENCY in comment.body:
-            # TODO create an array of all currency values 
-            # mentioned in the comment; currently just the first
             value = extract_value(comment.body)
             if (value == None):
                 break
@@ -66,18 +57,44 @@ def process_comments(commentForest):
             # but may need to add in a generic sleep()
             continue
 
-            # NOTE: when multiple values are extracted, do not post a reply
-            # until all currency symbols have been iterated through
-
-            # values = extract_values(comment.body, currency)
-            # response = ''
-            # for value in values:
-            #     response += RESPONSE_TEMPLATE
-            #           % (value, intValue/get_banana_value()) + '\n'
-            # print(response)
-            # comment.reply(response)
-    
+            # if I decide to check all currency values in a comment,
+            # rather than just the first:
+            '''
+            values = extract_values(comment.body, currency)
+            response = ''
+            for value in values:
+                response += RESPONSE_TEMPLATE
+                      % (value, intValue/get_banana_value()) + '\n'
+            print(response)
+            comment.reply(response)
+            '''
     return
+
+
+def login():
+    """
+    login() fetches a reddit instance with our saved login parameters.
+    
+    :return: a reddit instance
+    """
+
+    print("Logging in..")
+    try:
+        r = praw.Reddit(username = os.environ["reddit_username"],
+                password = os.environ["reddit_password"],
+                client_id = os.environ["client_id"],
+                client_secret = os.environ["client_secret"],
+                user_agent = os.environ["user_agent"],
+                ratelimit_seconds=900,
+                config_interpolation="basic")
+        print("Logged in!")
+    except:
+        try: 
+            r = praw.reddit("ValueOfBot", config_interpolation="basic")
+            print("Logged in!")
+        except:
+            print("Failed to log in!")
+    return r
 
 
 def extract_value(comment):
@@ -89,18 +106,18 @@ def extract_value(comment):
     :param comment: the comment body that contains a currency symbol
     :return: the word containing our currency value, as a string
     """
-    print(comment)
     comment = comment.split(' ')
     for word in comment:
         if CURRENCY in word:
+            # remove the '$' character
             word = word.replace(CURRENCY, '')
-            # print(word + ": " + str(word.replace(currency, '').isnumeric()))
+            # some voodoo to make sure there's only one decimal present
             if word.replace('.', '', 1).isdigit():
                 # TODO: check if period is just end of a sentence
                 print(word)
                 return word
 
-
+'''
 def extract_values(comment, currency):
     """
     extract_values() returns an array of all currency values found in
@@ -119,7 +136,7 @@ def extract_values(comment, currency):
                 values.push(word)
 
     return values
-
+'''
 
 def get_banana_value():
     """
