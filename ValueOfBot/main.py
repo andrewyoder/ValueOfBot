@@ -11,7 +11,7 @@ import urllib.request as urllib
 RESPONSE_TEMPLATE = "$%s is roughly %.1f bananas."
 RESPONSE_FOOTER = "\n\n^(I am a bot currently in development. DM me with any suggestions.)"
 CURRENCY = '$'
-SUBREDDITS = "funny+AskReddit+facepalm+gaming+mildlyinteresting+funnyanimals+meirl"
+SUBREDDITS = "funny+AskReddit+facepalm+gaming+mildlyinfuriating+mildlyinteresting+funnyanimals+meirl"
 
 
 def main():
@@ -45,6 +45,8 @@ def process_comments(commentForest):
     """
 
     for comment in commentForest:
+        if ((comment.author).name == 'ValueOfBot'):
+            continue
         if CURRENCY in comment.body:
             value = extract_value(comment.body)
             if (value == None):
