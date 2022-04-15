@@ -71,20 +71,24 @@ def process_comments(commentForest, cur):
     for comment in commentForest:
         if CURRENCY in comment.body:
             
-            print((comment.submission).title + ' - ' + comment.id)
+            print(comment.subreddit.name + ': ' + 
+                comment.submission.title + ' - ' + comment.id)
 
             # don't reply to myself
             if ((comment.author).name == 'ValueOfBot'):
+                print("Skipping comment - I am the author.")
                 continue
 
             # see if we've replied to this comment already
             try:
                 cur.execute("SELECT comment_id FROM replied_comments " \
-                            "WHERE comment_id = ${comment.id}")
+                            "WHERE comment_id = comment.id")
                 found = cur.fetchone()
             except:
+                print("Skipping comment - cur.execute() failed.")
                 continue
             if (found):
+                print("Skipping comment - already responded.")
                 continue
 
             print("New comment. Forming response.")
@@ -92,6 +96,7 @@ def process_comments(commentForest, cur):
             # haven't responded yet, so let's respond
             value = extract_value(comment.body)
             if (value == None):
+                print("Skipping comment - failed to extract value.")
                 break
             intValue = float(value.replace(CURRENCY, ''))
 
