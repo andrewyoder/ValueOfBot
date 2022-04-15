@@ -1,6 +1,7 @@
 import praw
 import os
 import psycopg2
+from psycopg2 import sql
 
 # to add back in when getting updated banana prices via the web
 '''
@@ -71,7 +72,7 @@ def process_comments(commentForest, cur):
     for comment in commentForest:
         if CURRENCY in comment.body:
             
-            print(comment.subreddit.name + ': ' + 
+            print((comment.subreddit).name + ': ' + 
                 comment.submission.title + ' - ' + comment.id)
 
             # don't reply to myself
@@ -81,8 +82,11 @@ def process_comments(commentForest, cur):
 
             # see if we've replied to this comment already
             try:
-                cur.execute("SELECT comment_id FROM replied_comments " \
-                            "WHERE comment_id = comment.id")
+                cur.execute(
+                    sql.SQL("SELECT comment_id FROM {} WHERE comment_id = %s")
+                        .format(sql.Identifier('replied_comments')), comment.id)
+                # cur.execute("SELECT comment_id FROM replied_comments " \
+                #             "WHERE comment_id = comment.id")
                 found = cur.fetchone()
             except:
                 print("Skipping comment - cur.execute() failed.")
@@ -105,8 +109,12 @@ def process_comments(commentForest, cur):
                     RESPONSE_FOOTER)
 
             print("Responded. Inserting comment ID %s into table.", comment.id)
-            cur.execute("INSERT INTO replied_comments (comment_id, subreddit)"\
-                        "VALUES (${comment.id}, ${comment.subreddit.name})")
+            cur.execute(
+                sql.SQL("INSERT INTO {} VALUES (%s, %s)")
+                    .format(sql.Identifier('replied_comments')),
+                    [comment.id, (comment.subreddit).name])
+            # cur.execute("INSERT INTO replied_comments (comment_id, subreddit)"\
+            #             "VALUES (${comment.id}, ${comment.subreddit.name})")
 
             # if I decide to check all currency values in a comment,
             # rather than just the first:
