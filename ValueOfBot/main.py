@@ -1,5 +1,6 @@
 import praw
 import os
+import psycopg2
 
 # to add back in when getting updated banana prices via the web
 '''
@@ -9,9 +10,11 @@ import urllib.request as urllib
 
 
 RESPONSE_TEMPLATE = "$%s is roughly %.1f bananas."
-RESPONSE_FOOTER = "\n\n^(I am a bot currently in development. DM me with any suggestions.)"
+RESPONSE_FOOTER = "\n\n^(I am a bot currently in development. " \
+                  "DM me with any suggestions.)"
 CURRENCY = '$'
-SUBREDDITS = "funny+AskReddit+facepalm+gaming+mildlyinfuriating+mildlyinteresting+funnyanimals+meirl"
+SUBREDDITS = "funny+AskReddit+facepalm+gaming+mildlyinfuriating" \
+             "+mildlyinteresting+funnyanimals+meirl"
 
 
 def main():
@@ -23,31 +26,57 @@ def main():
     the reddit instance is created from values stored in a hidden praw.ini file
     """
 
+    # create reddit and subreddit instances
     reddit = login_heroku()
     mySub = reddit.subreddit(SUBREDDITS)
+
+    # connect to db to store "seen" comments
+    DATABASE_URL = os.environ['DATABASE_URL']
+    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+    cur = conn.cursor()
 
     for submission in mySub.stream.submissions():
         submission.comment_sort = "best"
         submission.comments.replace_more(limit=None)
         commentForest = submission.comments.list()
-        process_comments(commentForest)
+        process_comments(commentForest, cur)
+        conn.commit()
+
+    # close db connection
+    cur.close()
+    conn.close()
 
     return 0
         
 
-def process_comments(commentForest):
+def process_comments(commentForest, cur):
     """
     process_comments() iterates through each comment in the CommentForest
     to see if a comment contains a currency value. if a currency symbol is
     found, the value is extracted and a response is formed.
 
     :param commentForest: the complete list of comments from a given submission
+    :param cur: cursor in our database for adding "seen" comments
     """
 
     for comment in commentForest:
-        if ((comment.author).name == 'ValueOfBot'):
-            continue
         if CURRENCY in comment.body:
+
+            # don't reply to myself
+            if ((comment.author).name == 'ValueOfBot'):
+                continue
+
+            # see if we've replied to this comment already
+            try:
+                cur.execute("SELECT comment_id FROM replied_comments " \
+                            "WHERE comment_id = ${comment.id}")
+                found = cur.fetchone()
+            except:
+                continue
+            if (found):
+                continue
+
+            # haven't responded yet, so let's respond
             value = extract_value(comment.body)
             if (value == None):
                 break
@@ -57,9 +86,10 @@ def process_comments(commentForest):
             comment.reply(RESPONSE_TEMPLATE % (value, 
                     (intValue/get_banana_value())) + 
                     RESPONSE_FOOTER)
-            # ratelimit should be handled by 15 minute PRAW setting,
-            # but may need to add in a generic sleep()
-            continue
+
+            cur.execute("INSERT INTO replied_comments (comment_id, subreddit)"\
+                        "VALUES (comment.id, (comment.subreddit).name)")
+
 
             # if I decide to check all currency values in a comment,
             # rather than just the first:
