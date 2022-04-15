@@ -27,14 +27,21 @@ def main():
     """
 
     # create reddit and subreddit instances
+    print("Logging in...")
     reddit = login_heroku()
+    print("Login successful.")
+    print("Establishing subreddit instances...")
     mySub = reddit.subreddit(SUBREDDITS)
+    print("Subreddit instances established.")
 
     # connect to db to store "seen" comments
+    print("Connecting to database...")
     DATABASE_URL = os.environ['DATABASE_URL']
     conn = psycopg2.connect(DATABASE_URL, sslmode='require')
     cur = conn.cursor()
+    print("Database connection successful.")
 
+    print("Going through submissions...")
     for submission in mySub.stream.submissions():
         submission.comment_sort = "best"
         submission.comments.replace_more(limit=None)
@@ -43,8 +50,10 @@ def main():
         conn.commit()
 
     # close db connection
+    print("Closing database connections...")
     cur.close()
     conn.close()
+    print("Database connections closed.")
 
     return 0
         
@@ -61,6 +70,8 @@ def process_comments(commentForest, cur):
 
     for comment in commentForest:
         if CURRENCY in comment.body:
+            
+            print((comment.submission).title + ' - ' + comment.id)
 
             # don't reply to myself
             if ((comment.author).name == 'ValueOfBot'):
@@ -76,20 +87,21 @@ def process_comments(commentForest, cur):
             if (found):
                 continue
 
+            print("New comment. Forming response.")
+
             # haven't responded yet, so let's respond
             value = extract_value(comment.body)
             if (value == None):
                 break
             intValue = float(value.replace(CURRENCY, ''))
-            print((comment.submission).title)
-            print(comment.id + ': ' + value)
+
             comment.reply(RESPONSE_TEMPLATE % (value, 
                     (intValue/get_banana_value())) + 
                     RESPONSE_FOOTER)
 
+            print("Responded. Inserting comment ID %s into table.", comment.id)
             cur.execute("INSERT INTO replied_comments (comment_id, subreddit)"\
-                        "VALUES (comment.id, (comment.subreddit).name)")
-
+                        "VALUES (${comment.id}, ${comment.subreddit.name})")
 
             # if I decide to check all currency values in a comment,
             # rather than just the first:
@@ -112,7 +124,6 @@ def login_heroku():
     :return: a reddit instance
     """
 
-    print("Logging in..")
     return praw.Reddit(username = os.environ["reddit_username"],
             password = os.environ["reddit_password"],
             client_id = os.environ["client_id"],
