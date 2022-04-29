@@ -132,7 +132,6 @@ def process_comments(commentForest, conn):
             comment.reply(response)
             '''
     
-    print("Closing database cursor...")
     cur.close()
 
     return
