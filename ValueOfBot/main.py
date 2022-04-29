@@ -87,7 +87,7 @@ def process_comments(commentForest, cur):
                         table=sql.Identifier('replied_comments'),
                         pkey=sql.Identifier('comment_id')), 
                         comment.id)
-                print(query)
+                # print(query)
                 cur.execute(query)
                 # cur.execute("SELECT comment_id FROM replied_comments " \
                 #             "WHERE comment_id = comment.id")
