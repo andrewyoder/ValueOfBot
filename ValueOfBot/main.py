@@ -91,11 +91,11 @@ def process_comments(commentForest, cur):
                 cur.execute(query)
                 # cur.execute("SELECT comment_id FROM replied_comments " \
                 #             "WHERE comment_id = comment.id")
-                found = cur.fetchone()
+                # found = cur.fetchone()
             except:
                 print("Skipping comment - cur.execute() failed.")
                 continue
-            if (found):
+            if (cur.fetchone()):
                 print("Skipping comment - already responded.")
                 continue
 
