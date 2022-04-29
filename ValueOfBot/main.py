@@ -51,11 +51,9 @@ def main():
         conn.commit()
 
     # close db connection
-    print("Closing database connections...")
-    cur.close()
+    print("Closing database connection...")
     conn.close()
-    print("Database connections closed.")
-
+    
     return 0
         
 
@@ -133,6 +131,10 @@ def process_comments(commentForest, conn):
             print(response)
             comment.reply(response)
             '''
+    
+    print("Closing database cursor...")
+    cur.close()
+
     return
 
 
