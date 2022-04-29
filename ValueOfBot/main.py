@@ -82,9 +82,9 @@ def process_comments(commentForest, cur):
 
             # see if we've replied to this comment already
             try:
-                cur.execute(
-                    sql.SQL("SELECT comment_id FROM {} WHERE comment_id = %s")
-                        .format(sql.Identifier('replied_comments')), comment.id)
+                query = sql.SQL("SELECT comment_id FROM {} WHERE comment_id = %s".format(
+                        sql.Identifier('replied_comments')), comment.id)
+                cur.execute(query)
                 # cur.execute("SELECT comment_id FROM replied_comments " \
                 #             "WHERE comment_id = comment.id")
                 found = cur.fetchone()
