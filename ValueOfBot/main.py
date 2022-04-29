@@ -39,7 +39,7 @@ def main():
     print("Connecting to database...")
     DATABASE_URL = os.environ['DATABASE_URL']
     conn = psycopg2.connect(DATABASE_URL, sslmode='require')
-    cur = conn.cursor()
+    
     print("Database connection successful.")
 
     print("Going through submissions...")
@@ -47,7 +47,7 @@ def main():
         submission.comment_sort = "best"
         submission.comments.replace_more(limit=None)
         commentForest = submission.comments.list()
-        process_comments(commentForest, cur)
+        process_comments(commentForest, conn)
         conn.commit()
 
     # close db connection
@@ -59,7 +59,7 @@ def main():
     return 0
         
 
-def process_comments(commentForest, cur):
+def process_comments(commentForest, conn):
     """
     process_comments() iterates through each comment in the CommentForest
     to see if a comment contains a currency value. if a currency symbol is
@@ -68,6 +68,8 @@ def process_comments(commentForest, cur):
     :param commentForest: the complete list of comments from a given submission
     :param cur: cursor in our database for adding "seen" comments
     """
+
+    cur = conn.cursor()
 
     for comment in commentForest:
         if CURRENCY in comment.body:
@@ -116,6 +118,7 @@ def process_comments(commentForest, cur):
                 sql.SQL("INSERT INTO {} VALUES (%s, %s)")
                     .format(sql.Identifier('replied_comments')),
                     [comment.id, (comment.subreddit).name])
+            conn.commit()
             # cur.execute("INSERT INTO replied_comments (comment_id, subreddit)"\
             #             "VALUES (${comment.id}, ${comment.subreddit.name})")
 
