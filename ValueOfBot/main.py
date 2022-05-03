@@ -85,9 +85,10 @@ def process_comments(commentForest, conn):
                 # query = sql.SQL("SELECT * FROM {table} WHERE {pkey} = (%s);".format(
                 #         table=sql.Literal('replied_comments'),
                 #         pkey=sql.Identifier('comment_id')))
-                query = "SELECT * FROM replied_comments WHERE 'comment_id' = {}".format(comment.id)
-                print(query).as_string()
-                cur.execute(query)
+                query = "SELECT * FROM replied_comments WHERE comment_id = (%s)"
+                data = [comment.id]
+                print(query, data).as_string()
+                cur.execute(query, data)
                 # cur.execute("SELECT comment_id FROM replied_comments " \
                 #             "WHERE comment_id = comment.id")
                 # found = cur.fetchone()
